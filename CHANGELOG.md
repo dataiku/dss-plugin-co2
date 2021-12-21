@@ -1,13 +1,8 @@
 # Changelog
 
-## Version X.Y.Z - Type of release (*) - YYYY-MM-DD
-- Changes 1 ...
-- Changes 2 ... 
-- ...
+## [Version 1.0.0](https://) - Initial release - 2021-12
 
-(*) Possible types of releases
+⚡️Convert electricity consumption to co2 emission using:
+- RTE for France
+- ElectricityMap for all other locations
 
-- Initial release
-- Bugfix release
-- Feature release
-- .... 
