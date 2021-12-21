@@ -1,2 +1,2 @@
-plotly
+plotly>=5.4.0
 nbformat>=4.2.0
