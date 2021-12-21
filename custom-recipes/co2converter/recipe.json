@@ -1,0 +1,110 @@
+// This file is the descriptor for the Custom code recipe co2converter
+{
+    "meta": {
+        "label": "CO2 Converter",
+        "description": "Convert your electricity consumption to carbon emission",
+        "icon": "icon-dashboard"
+    },
+
+    "kind": "PYTHON",
+    "selectableFromDataset": "input_ds",
+
+
+    "inputRoles": [
+        {
+            "name": "input_ds",
+            "label": "input dataset",
+            "description": "input dataset with consumption in kWh and date",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+
+    "outputRoles": [
+        {
+            "name": "output_ds",
+            "label": "output dataset",
+            "description": "output dataset with co2 emission added to input dataset",
+            "arity": "UNARY",
+            "required": false,
+            "acceptsDataset": true
+        }
+
+    ],
+
+
+    "params": [
+        {
+            "name": "DateColName",
+            "label": "Date column",
+            "type": "COLUMN",
+            "description": "",
+            "mandatory": true,
+            "columnRole":"input_ds"
+        },
+        {
+            "name": "ConsumptionColName",
+            "label": "Electricity consumption column",
+            "type": "COLUMN",
+            "description": "Electricity consumption in kWh",
+            "mandatory": true,
+            "columnRole":"input_ds"
+            
+        },
+
+        {
+            "name": "APIProvider",
+            "label": "API Provider",
+            "type": "SELECT",
+            "description": "RTE is for France only. Electricitymap covers many locations." ,
+            "selectChoices": [
+                {
+                    "value": "RTE",
+                    "label": "RTE"
+                },
+                {
+                    "value": "ElectricityMap",
+                    "label": "ElectricityMap"
+                }
+            ]
+        },
+                
+          {
+            "name": "sep_conf",
+            "type": "SEPARATOR",
+            "label" : "Configuration",
+            "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
+          },
+
+        {
+            "name": "api_configuration_preset",
+            "label": "API configuration preset",
+            "type": "PRESET",
+            "parameterSetId": "credentials",
+            "visibilityCondition" : "model.APIProvider == 'ElectricityMap'",
+            "mandatory": false
+        },
+        
+        {
+            "name": "LatColName",
+            "type": "COLUMN",
+            "label" : "Latitude column",
+            "columnRole":"input_ds",
+            "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
+        },
+               {
+            "name": "LonColName",
+            "type": "COLUMN",
+            "label" : "Longitude column",
+            "columnRole":"input_ds",
+            "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
+        }
+
+    ],
+
+
+
+    "resourceKeys": []
+
+}
