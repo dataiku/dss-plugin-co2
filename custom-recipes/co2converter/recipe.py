@@ -96,6 +96,8 @@ if get_recipe_config()['APIProvider'] == 'RTE':
 
     #Convert DateColName to datetime format: 
     input_df[DateColName] =  pd.to_datetime(input_df[DateColName])
+    
+    #Parameters for API call: 
     params = {
     'dataset': 'eco2mix-national-cons-def',
     'timezone': 'Europe/Paris',
