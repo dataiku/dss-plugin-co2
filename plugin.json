@@ -1,8 +1,7 @@
 {
     "id": "co2-converter",
     "version": "1.0.0",
-
-    // Meta data for display purposes:
+    
     "meta": {
         "label": "Co2 converter",
         "description": "Convert your electricity consumption to carbon emission ",
