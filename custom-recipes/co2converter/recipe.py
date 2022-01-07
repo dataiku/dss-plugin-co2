@@ -23,25 +23,69 @@ output_names = get_output_names_for_role('output_ds')
 output_datasets = [dataiku.Dataset(name) for name in output_names]
 output_dataset=output_datasets[0]
 
-#load input DSS dataset as a Pandas dataframe
+# Load input DSS dataset as a Pandas dataframe
 input_df = input_dataset.get_dataframe()
 
+# Load input Parameters:
+APIProvider = get_recipe_config().get('APIProvider')
+DateColName = get_recipe_config().get('DateColName')
+ConsumptionColName = get_recipe_config().get('ConsumptionColName')
 
-#parameters:
-if get_recipe_config()['APIProvider'] == 'RTE':
+# API endpoint parameters conditions: 
+if APIProvider == 'RTE':
     API_ENDPOINT = 'https://opendata.reseaux-energies.fr/api/records/1.0/download/'
+    
 
-if get_recipe_config()['APIProvider'] == 'ElectricityMap':
+if APIProvider == 'ElectricityMap':
     
     API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/past-range'
     API_TOKEN = get_recipe_config().get("api_configuration_preset").get("APITOKEN")
-    lat = get_recipe_config()['LatColName']
-    lon = get_recipe_config()['LonColName']
+    lat = get_recipe_config().get('LatColName')
+    lon = get_recipe_config().get('LonColName')
+
+
+# Input validation:
+
+## Check if columns are in input dataset
+columns_names = input_df.columns
+
+### Date Column:
+if DateColName not in columns_names:
+    raise Exception("Not able to find the '%s' column" % DateColName)
+
+### Consumption Column:
+if ConsumptionColName not in columns_names:
+    raise Exception("Not able to find the '%s' column" % ConsumptionColName)
+
+### Latitude and longitude Column:
+if APIProvider == 'ElectricityMap':
+    if lat not in columns_names:
+        raise Exception("Not able to find the '%s' column" % lat)
     
+    if lon not in columns_names:
+        raise Exception("Not able to find the '%s' column" % lon)
 
 
-DateColName = get_recipe_config()['DateColName']
-ConsumptionColName = get_recipe_config()['ConsumptionColName']
+## Check input data validity:
+
+###Latitude and longitude
+if APIProvider == 'ElectricityMap':
+    if input_df[lat].min() < -90:
+        raise Exception("Latitude value is below -90.")
+    if input_df[lat].max() > 90:
+        raise Exception("Latitude value is over 90.")
+    
+    if input_df[lon].min() < -180:
+        raise Exception("longitude value is below -180.")
+    if input_df[lon].max() > 180:
+        raise Exception("longitude value is over 180.")
+    
+    
+    #API token validity:
+    if API_TOKEN == None:
+        raise Exception("No electricityMap API token found.")
+    
+    
 
 def date_chunk(start, end, chunk_size):
      # Set the range
@@ -81,11 +125,9 @@ r = requests.session()
 
 
 ###################################### RTE ######################################
-#'eco2mix-national-tr' -> tr= temps reel, de H-2 à M-2
-#'eco2mix-national-cons-def' -> historique consolidé 2012 à M-1
-#To do: Add a test on the date: if date < currentdate - 1 month -> eco2mix-national-tr else eco2mix-national-cons-def
+#To do: Add a test on the date: if date < currentdate - 1 month -> eco2mix-national-tr (tr= real time = H-2 -> M-2) else eco2mix-national-cons-def (2012 -> M-1)
 
-if get_recipe_config()['APIProvider'] == 'RTE':
+if APIProvider == 'RTE':
     #Get MinDate and MaxDate to compute the number of rows to be requested:
     MinDate = min(input_df[DateColName])
     MaxDate = max(input_df[DateColName])
@@ -127,7 +169,7 @@ if get_recipe_config()['APIProvider'] == 'RTE':
 ###################################### ElectricityMap ######################################
 
 
-if get_recipe_config()['APIProvider'] == 'ElectricityMap':
+if APIProvider == 'ElectricityMap':
 
     #GroupBy
     uniquelatlon = input_df.groupby([lat, lon])[DateColName].unique()
