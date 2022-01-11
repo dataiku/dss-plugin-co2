@@ -4,7 +4,7 @@
 
 This Dataiku DSS plugin provides a recipe to convert electricity consumption into co2 emissions, according to the carbon intensity of a given location.
 
-Documentation available in the ![Dataiku Plugins page](https://www.dataiku.com/product/plugins/co2-converter/)
+Documentation available in the [Dataiku Plugins page](https://www.dataiku.com/product/plugins/co2-converter/)
 
 ## Release notes
 
