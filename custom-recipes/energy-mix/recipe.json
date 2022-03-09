@@ -1,0 +1,91 @@
+// This file is the descriptor for the Custom code recipe co2converter
+{
+    "meta": {
+        "label": "Energy mix",
+        "description": "Use electricitymap API to get energy mix.",
+        "icon": "icon-bolt"
+    },
+
+    "kind": "PYTHON",
+    "selectableFromDataset": "input_ds",
+
+
+    "inputRoles": [
+        {
+            "name": "input_ds",
+            "label": "input dataset",
+            "description": "input dataset with consumption in kWh and date",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+
+    "outputRoles": [
+        {
+            "name": "output_ds",
+            "label": "output dataset",
+            "description": "output dataset with co2 emission added to input dataset",
+            "arity": "UNARY",
+            "required": false,
+            "acceptsDataset": true
+        }
+
+    ],
+
+
+    "params": [
+        
+        {
+            "name": "api_configuration_preset",
+            "label": "API configuration preset",
+            "type": "PRESET",
+            "parameterSetId": "credentials",
+            "mandatory": true
+        },
+        {
+            "name": "DateColName",
+            "label": "Date column",
+            "type": "COLUMN",
+            "description": "",
+            "mandatory": true,
+            "columnRole":"input_ds"
+        },
+        
+        {
+            "name": "LatColName",
+            "type": "COLUMN",
+            "label" : "Latitude column",
+            "columnRole":"input_ds"
+        },
+               {
+            "name": "LonColName",
+            "type": "COLUMN",
+            "label" : "Longitude column",
+            "columnRole":"input_ds"
+        },
+
+        {
+            "type": "MULTISELECT",
+            "name": "ColsToRetrieve",
+            "label": "Select the columns to retrieve:",
+            "selectChoices": [
+              {"value":"powerConsumptionBreakdown","label":"Power Consumption Breakdown"},
+              {"value":"powerProductionBreakdown","label":"Power Production Breakdown"},
+              {"value":"powerImportBreakdown","label":"Power Import Breakdown"},
+              {"value":"powerExportBreakdown","label":"Power Export Breakdown"},
+              {"value":"fossilFreePercentage","label":"Fossil Free Percentage"},
+              {"value":"renewablePercentage","label":"Renewable Percentage"},
+              {"value":"powerConsumptionTotal","label":"Power Consumption Total"},
+              {"value":"powerProductionTotal","label":"Power Production Total"},
+              {"value":"powerImportTotal","label":"Power Import Total"}
+            ]
+          }
+
+    ],
+
+
+
+    "resourceKeys": []
+
+}
