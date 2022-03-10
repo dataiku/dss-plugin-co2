@@ -180,7 +180,7 @@ if APIProvider == 'ElectricityMap':
         MinDate = x.min()
         MaxDate = x.max()
         
-        max_date_dt=datetime.strptime(MaxDate)
+        max_date_dt=datetime.datetime.strptime(MaxDate)
 
         now = datetime.datetime.now().isoformat()
         max_date = max_date_dt.isoformat()
