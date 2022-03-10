@@ -179,11 +179,9 @@ if APIProvider == 'ElectricityMap':
     for index, x in enumerate(uniquelatlon):
         MinDate = x.min()
         MaxDate = x.max()
-        
-        max_date_dt=datetime.datetime.strptime(MaxDate)
-
+    
         now = datetime.datetime.now().isoformat()
-        max_date = max_date_dt.isoformat()
+        max_date = MaxDate.isoformat()
         
         
         #Splitting like a goret because the date format between date and time is not consistent: Once it's 'T' once it's ' '.
