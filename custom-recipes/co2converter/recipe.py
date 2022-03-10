@@ -91,13 +91,17 @@ def date_chunk(start, end, chunk_size):
      # Set the range
     start_date = datetime.datetime.strptime(start, "%Y-%m-%d")
     end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
-
+    
     # You can have the difference in days with this :
     delta = (end_date - start_date)
     diff_days = delta.days
 
     # Create the list of date
     date_list = [ (start_date + (datetime.timedelta(days=1) * x)).strftime("%Y-%m-%d")  for x in range(0, diff_days + 1)]
+    
+    if diff_days < 1:
+        date_list = [[start_date.strftime("%Y-%m-%d"), (end_date + datetime.timedelta(days=1)).strftime("%Y-%m-%d")]]
+        return date_list
     
     chunked_list = list()
     date_list_size = len(date_list)
