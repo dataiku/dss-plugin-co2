@@ -91,7 +91,7 @@ def date_chunk(start, end, chunk_size):
         date_list = [[start_date.strftime("%Y-%m-%d"), (end_date + datetime.timedelta(days=1)).strftime("%Y-%m-%d")]]
         return date_list
     
-    chunked_list = list()
+    chunked_list = []
     date_list_size = len(date_list)
     
     for i in range(0, len(date_list), chunk_size):
