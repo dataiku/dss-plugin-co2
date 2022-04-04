@@ -181,13 +181,16 @@ if APIProvider == 'ElectricityMap':
     for index, x in enumerate(uniquelatlon):
         MinDate = x.min()
         MaxDate = x.max()
-    
-        now = datetime.datetime.now().isoformat()
-        max_date = MaxDate.isoformat()
         
     
-        MinDateDay = str(MinDate)[0:10]
-        MaxDateDay = str(MaxDate)[0:10]
+        #Convert dates to iso format:
+        now = datetime.datetime.utcnow()
+        min_date = datetime.datetime.fromisoformat(str(MinDate))
+        max_date = datetime.datetime.fromisoformat(str(MaxDate))
+        
+        #Get only the day from the dates:
+        MinDateDay = min_date.strftime("%Y-%m-%d")
+        MaxDateDay = max_date.strftime("%Y-%m-%d")
 
         #As the API is limited to 10 days, I create chunks of dates:
         chunked_dates = date_chunk(MinDateDay,MaxDateDay,10)
@@ -212,7 +215,7 @@ if APIProvider == 'ElectricityMap':
             
 
             
-        if(max_date > now):
+        if(max_date.timestamp() > now.timestamp()):
             
             #Change api endpoint:
             API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/forecast'
