@@ -92,7 +92,7 @@ def date_chunk(start, end, chunk_size):
     start_date = datetime.datetime.strptime(start, "%Y-%m-%d")
     end_date = datetime.datetime.strptime(end, "%Y-%m-%d")
     
-    # You can have the difference in days with this :
+    # Compute the difference in days
     delta = (end_date - start_date)
     diff_days = delta.days
 
@@ -129,8 +129,6 @@ r = requests.session()
 
 
 ###################################### RTE ######################################
-#To do: Add a test on the date: if date < currentdate - 1 month -> eco2mix-national-tr (tr= real time = H-2 -> M-2) else eco2mix-national-cons-def (2012 -> M-1)
-
 if APIProvider == 'RTE':
     #Get MinDate and MaxDate to compute the number of rows to be requested:
     MinDate = min(input_df[DateColName])
@@ -187,10 +185,7 @@ if APIProvider == 'ElectricityMap':
         now = datetime.datetime.now().isoformat()
         max_date = MaxDate.isoformat()
         
-        
-        #Splitting like a goret because the date format between date and time is not consistent: Once it's 'T' once it's ' '.
-        #I don't have the time to understand why. I guess I should convert to datetime format but it didn't worked when I tried
-        
+    
         MinDateDay = str(MinDate)[0:10]
         MaxDateDay = str(MaxDate)[0:10]
 
