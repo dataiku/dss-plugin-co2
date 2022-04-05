@@ -186,8 +186,8 @@ if APIProvider == 'ElectricityMap':
     
         #Convert dates to iso format:
         now = datetime.datetime.utcnow()
-        max_date = parser.parse(MaxDate)
-        min_date = parser.parse(MinDate)
+        max_date = parser.parse(str(MaxDate))
+        min_date = parser.parse(str(MinDate))
         
         #Get only the day from the dates:
         MinDateDay = min_date.strftime("%Y-%m-%d")
