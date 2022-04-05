@@ -8,6 +8,7 @@ import requests
 from io import StringIO
 from pandas.io.json import json_normalize
 import datetime
+from dateutil import parser
 
 
 # Import the helpers for custom recipes
@@ -185,8 +186,8 @@ if APIProvider == 'ElectricityMap':
     
         #Convert dates to iso format:
         now = datetime.datetime.utcnow()
-        min_date = datetime.datetime.fromisoformat(str(MinDate))
-        max_date = datetime.datetime.fromisoformat(str(MaxDate))
+        max_date = parser.parse(MaxDate)
+        min_date = parser.parse(MinDate)
         
         #Get only the day from the dates:
         MinDateDay = min_date.strftime("%Y-%m-%d")
