@@ -184,7 +184,7 @@ if APIProvider == 'ElectricityMap':
         MaxDate = x.max()
         
     
-        #Convert dates to iso format:
+        #Parse dates:
         now = datetime.datetime.utcnow()
         max_date = parser.parse(str(MaxDate))
         min_date = parser.parse(str(MinDate))
