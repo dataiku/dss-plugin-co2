@@ -1,4 +1,3 @@
-// This file is the descriptor for the Custom code recipe co2converter
 {
     "meta": {
         "label": "CO2 Converter",
@@ -8,7 +7,6 @@
 
     "kind": "PYTHON",
     "selectableFromDataset": "input_ds",
-
 
     "inputRoles": [
         {
@@ -32,7 +30,6 @@
         }
 
     ],
-
 
     "params": [
         {
@@ -69,14 +66,12 @@
                 }
             ]
         },
-                
-          {
-            "name": "sep_conf",
-            "type": "SEPARATOR",
-            "label" : "Configuration",
-            "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
-          },
-
+        {
+        "name": "sep_conf",
+        "type": "SEPARATOR",
+        "label" : "Configuration",
+        "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
+        },
         {
             "name": "api_configuration_preset",
             "label": "API configuration preset",
@@ -102,8 +97,6 @@
         }
 
     ],
-
-
 
     "resourceKeys": []
 
