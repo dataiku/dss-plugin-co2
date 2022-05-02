@@ -34,9 +34,14 @@ if APIProvider == 'RTE':
 if APIProvider == 'ElectricityMap':
     API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/past-range'
     API_TOKEN = get_recipe_config().get("api_configuration_preset").get("APITOKEN")
-    lat = get_recipe_config().get('LatColName')
-    lon = get_recipe_config().get('LonColName')
+    coordinates = get_recipe_config().get('Coordinates')
 
+
+# Converting geopoint to longitude and latitude to fit the API endpoint:
+input_df[coordinates] = input_df[coordinates].str.replace(r'[POINT()]', '', regex=True)
+input_df[coordinates] = input_df[coordinates].str.split(" ", expand=False)
+split_df = pd.DataFrame(input_df[coordinates].tolist(), columns=['lon', 'lat'])
+input_df = pd.concat([input_df, split_df], axis=1)
 
 # Input validation:
 
@@ -53,27 +58,11 @@ if ConsumptionColName not in columns_names:
 
 # ## Latitude and longitude Column:
 if APIProvider == 'ElectricityMap':
-    if lat not in columns_names:
-        raise Exception("Not able to find the '%s' column" % lat)
-
-    if lon not in columns_names:
-        raise Exception("Not able to find the '%s' column" % lon)
+    if coordinates not in columns_names:
+        raise Exception("Not able to find the '%s' column" % coordinates)
 
 
 # # Check input data validity:
-
-# ##Latitude and longitude
-if APIProvider == 'ElectricityMap':
-    if input_df[lat].min() < -90:
-        raise Exception("Latitude value is below -90.")
-    if input_df[lat].max() > 90:
-        raise Exception("Latitude value is over 90.")
-
-    if input_df[lon].min() < -180:
-        raise Exception("longitude value is below -180.")
-    if input_df[lon].max() > 180:
-        raise Exception("longitude value is over 180.")
-
     # API token validity:
     if API_TOKEN is None:
         raise Exception("No electricityMap API token found.")
@@ -126,7 +115,7 @@ if APIProvider == 'RTE':
 if APIProvider == 'ElectricityMap':
 
     # GroupBy
-    uniquelatlon = input_df.groupby([lat, lon])[DateColName].unique()
+    uniquelatlon = input_df.groupby(["lat", "lon"])[DateColName].unique()
     df = pd.DataFrame()
 
     # for each location and with 10 days chunks
@@ -205,7 +194,7 @@ if APIProvider == 'ElectricityMap':
     output_df = pd.merge_asof(
         input_df.sort_values(by=[DateColName]),
         df.sort_values(by=['co2_date_time']),
-        by=[lat, lon],
+        by=["lat", "lon"],
         left_on=[DateColName],
         right_on=['co2_date_time']
     )

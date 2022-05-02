@@ -82,16 +82,10 @@
         },
         
         {
-            "name": "LatColName",
+            "name": "Coordinates",
             "type": "COLUMN",
-            "label" : "Latitude column",
-            "columnRole":"input_ds",
-            "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
-        },
-               {
-            "name": "LonColName",
-            "type": "COLUMN",
-            "label" : "Longitude column",
+            "allowedColumnTypes": "geopoint",
+            "label" : "coordinates geopoint",
             "columnRole":"input_ds",
             "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
         }
