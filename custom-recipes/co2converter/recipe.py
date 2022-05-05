@@ -56,7 +56,7 @@ if DateColName not in columns_names:
 if ConsumptionColName not in columns_names:
     raise Exception("Not able to find the '%s' column" % ConsumptionColName)
 
-# ## Latitude and longitude Column:
+# ## coordinates column:
 if APIProvider == 'ElectricityMap':
     if coordinates not in columns_names:
         raise Exception("Not able to find the '%s' column" % coordinates)

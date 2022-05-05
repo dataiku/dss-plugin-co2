@@ -21,13 +21,18 @@ input_df = input_dataset.get_dataframe()
 
 # Load input Parameters:
 DateColName = get_recipe_config().get('DateColName')
-lat = get_recipe_config().get('LatColName')
-lon = get_recipe_config().get('LonColName')
+coordinates = get_recipe_config().get('Coordinates')
 API_ENDPOINT = 'https://api.electricitymap.org/v3/power-breakdown/past-range'
 API_TOKEN = get_recipe_config().get("api_configuration_preset").get("APITOKEN")
 
 ColToRetrieve = get_recipe_config().get('ColsToRetrieve')
 
+
+# Converting geopoint to longitude and latitude to fit the API endpoint:
+input_df[coordinates] = input_df[coordinates].str.replace(r'[POINT()]', '', regex=True)
+input_df[coordinates] = input_df[coordinates].str.split(" ", expand=False)
+split_df = pd.DataFrame(input_df[coordinates].tolist(), columns=['lon', 'lat'])
+input_df = pd.concat([input_df, split_df], axis=1)
 
 # Input validation:
 
@@ -39,28 +44,13 @@ if DateColName not in columns_names:
     raise Exception("Not able to find the '%s' column" % DateColName)
 
 
-# ## Latitude and longitude Column:
-
-if lat not in columns_names:
-    raise Exception("Not able to find the '%s' column" % lat)
-
-if lon not in columns_names:
-    raise Exception("Not able to find the '%s' column" % lon)
+# ## coordinates column:
+if coordinates not in columns_names:
+    raise Exception("Not able to find the '%s' column" % coordinates)
 
 
 # # Check input data validity:
 
-# ##Latitude and longitude
-
-if input_df[lat].min() < -90:
-    raise Exception("Latitude value is below -90.")
-if input_df[lat].max() > 90:
-    raise Exception("Latitude value is over 90.")
-
-if input_df[lon].min() < -180:
-    raise Exception("longitude value is below -180.")
-if input_df[lon].max() > 180:
-    raise Exception("longitude value is over 180.")
 
 # API token validity:
 if API_TOKEN is None:
@@ -73,7 +63,7 @@ r = requests.session()
 # ##################################### ElectricityMap ######################################
 
 # GroupBy
-uniquelatlon = input_df.groupby([lat, lon])[DateColName].unique()
+uniquelatlon = input_df.groupby(['lat', 'lon'])[DateColName].unique()
 df = pd.DataFrame()
 
 # for each location and with 10 days chunks
@@ -152,7 +142,7 @@ for index, x in enumerate(uniquelatlon):
     output_df = pd.merge_asof(
         input_df.sort_values(by=[DateColName]),
         df_col.sort_values(by=['e-mix_date_time']),
-        by=[lat, lon],
+        by=["lat", "lon"],
         left_on=[DateColName],
         right_on=['e-mix_date_time']
     )
