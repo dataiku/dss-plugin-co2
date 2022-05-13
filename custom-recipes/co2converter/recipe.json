@@ -84,7 +84,7 @@
         {
             "name": "Coordinates",
             "type": "COLUMN",
-            "allowedColumnTypes": "geopoint",
+            "allowedColumnTypes": ["geopoint","string"],
             "label" : "coordinates geopoint",
             "columnRole":"input_ds",
             "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
