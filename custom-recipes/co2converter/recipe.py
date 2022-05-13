@@ -43,6 +43,7 @@ input_df[coordinates] = input_df[coordinates].str.split(" ", expand=False)
 split_df = pd.DataFrame(input_df[coordinates].tolist(), columns=['lon', 'lat'])
 input_df = pd.concat([input_df, split_df], axis=1)
 
+
 # Input validation:
 
 # # Check if columns are in input dataset
@@ -181,7 +182,7 @@ if APIProvider == 'ElectricityMap':
     df = df.dropna()
 
     # rename date_heure in co2_dateTime and taux_co2 in carbon_intensity
-    df = df.rename(columns={"datetime": "co2_date_time", "carbonIntensity": "carbon_intensity"})
+    df = df.rename(columns={"datetime": "co2_date_time", "carbonIntensity": "carbon_intensity","latitude": "lat", "longitude": "lon"})
 
     # join on date with input_df:
 
@@ -194,7 +195,7 @@ if APIProvider == 'ElectricityMap':
     output_df = pd.merge_asof(
         input_df.sort_values(by=[DateColName]),
         df.sort_values(by=['co2_date_time']),
-        by=["lat", "lon"],
+        by=['lat', 'lon'],
         left_on=[DateColName],
         right_on=['co2_date_time']
     )
@@ -204,6 +205,9 @@ if APIProvider == 'ElectricityMap':
 # compute co2emission:
 # taux_co2 'standard' unit is in g/kwh, but I choose to convert the result into kgeqCO2:
 output_df["co2_emission"] = (output_df[ConsumptionColName] * output_df['carbon_intensity']) / 1000
+
+#drop lat and lon columns (not needed):
+output_df.drop(["lat","lon"],axis=1,inplace=True)
 
 # Write output
 output_dataset.write_with_schema(output_df)
