@@ -40,7 +40,7 @@ if APIProvider == 'ElectricityMap':
 # Converting geopoint to longitude and latitude to fit the API endpoint:
 input_df["extracted_geopoint"] = input_df[coordinates].str.replace(r'[POINT()]', '', regex=True)
 input_df["extracted_geopoint"] = input_df["extracted_geopoint"].str.split(" ", expand=False)
-split_df = pd.DataFrame(input_df["extracted_geopoint"].tolist(), columns=['lon', 'lat'])
+split_df = pd.DataFrame(input_df["extracted_geopoint"].tolist(), columns=['extracted_geopoint_longitude', 'extracted_geopoint_latitude'])
 input_df = input_df.drop(columns="extracted_geopoint")
 input_df = pd.concat([input_df, split_df], axis=1)
 
@@ -117,7 +117,7 @@ if APIProvider == 'RTE':
 if APIProvider == 'ElectricityMap':
 
     # GroupBy latitude, longitude to retrieve only one API call per coordinates:
-    uniquelatlon = input_df.groupby(["lat", "lon"])[DateColName].unique()
+    uniquelatlon = input_df.groupby(["extracted_geopoint_latitude", "extracted_geopoint_longitude"])[DateColName].unique()
     df = pd.DataFrame()
 
     # for each unique location location and with 10 days chunks (to avoid API limit):
@@ -183,7 +183,8 @@ if APIProvider == 'ElectricityMap':
     df = df.dropna()
 
     # rename date_heure in co2_dateTime and taux_co2 in carbon_intensity
-    df = df.rename(columns={"datetime": "co2_date_time", "carbonIntensity": "carbon_intensity","latitude": "lat", "longitude": "lon"})
+    # renaming latitude and longitude to extracted_geopoint_latitude and extracted_geopoint_longitude for join_asof
+    df = df.rename(columns={"datetime": "co2_date_time", "carbonIntensity": "carbon_intensity","latitude": "extracted_geopoint_latitude", "longitude": "extracted_geopoint_longitude"})
 
     # join on date with input_df:
 
@@ -196,7 +197,7 @@ if APIProvider == 'ElectricityMap':
     output_df = pd.merge_asof(
         input_df.sort_values(by=[DateColName]),
         df.sort_values(by=['co2_date_time']),
-        by=['lat', 'lon'],
+        by=['extracted_geopoint_latitude', 'extracted_geopoint_longitude'],
         left_on=[DateColName],
         right_on=['co2_date_time']
     )
@@ -208,7 +209,7 @@ if APIProvider == 'ElectricityMap':
 output_df["co2_emission"] = (output_df[ConsumptionColName] * output_df['carbon_intensity']) / 1000
 
 #drop lat and lon columns (not needed):
-output_df.drop(["lat","lon"],axis=1,inplace=True)
+output_df.drop(["extracted_geopoint_latitude","extracted_geopoint_longitude"],axis=1,inplace=True)
 
 # Write output
 output_dataset.write_with_schema(output_df)
