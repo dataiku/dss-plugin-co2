@@ -38,9 +38,10 @@ if APIProvider == 'ElectricityMap':
 
 
 # Converting geopoint to longitude and latitude to fit the API endpoint:
-input_df[coordinates] = input_df[coordinates].str.replace(r'[POINT()]', '', regex=True)
-input_df[coordinates] = input_df[coordinates].str.split(" ", expand=False)
-split_df = pd.DataFrame(input_df[coordinates].tolist(), columns=['lon', 'lat'])
+input_df["extracted_geopoint"] = input_df[coordinates].str.replace(r'[POINT()]', '', regex=True)
+input_df["extracted_geopoint"] = input_df["extracted_geopoint"].str.split(" ", expand=False)
+split_df = pd.DataFrame(input_df["extracted_geopoint"].tolist(), columns=['lon', 'lat'])
+input_df = input_df.drop(columns="extracted_geopoint")
 input_df = pd.concat([input_df, split_df], axis=1)
 
 
@@ -115,11 +116,11 @@ if APIProvider == 'RTE':
 
 if APIProvider == 'ElectricityMap':
 
-    # GroupBy
+    # GroupBy latitude, longitude to retrieve only one API call per coordinates:
     uniquelatlon = input_df.groupby(["lat", "lon"])[DateColName].unique()
     df = pd.DataFrame()
 
-    # for each location and with 10 days chunks
+    # for each unique location location and with 10 days chunks (to avoid API limit):
 
     for index, x in enumerate(uniquelatlon):
         MinDate = x.min()
