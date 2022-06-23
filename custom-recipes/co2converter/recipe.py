@@ -53,12 +53,12 @@ if ConsumptionColName not in columns_names:
 if APIProvider == 'ElectricityMap':
     if coordinates not in columns_names:
         raise Exception("Not able to find the '%s' column" % coordinates)
-    
+
     # # Check if geopoint column has no empty values:
     if input_df[coordinates].isnull().values.any():
         raise ValueError('Empty coordinates found. Please check your input dataset.')
 
-    # # Check if geopoint looks like a valid geopoint: 
+    # # Check if geopoint looks like a valid geopoint:
     if not input_df[coordinates].str.startswith('POINT(').all():
         raise ValueError('Invalid coordinates. Geopoint format required: POINT(longitude latitude)')
 
@@ -68,8 +68,14 @@ if APIProvider == 'ElectricityMap':
     if API_TOKEN is None:
         raise Exception("No electricityMap API token found.")
 
+    # Date is not in the future:
+    input_df[DateColName] = pd.to_datetime(input_df[DateColName], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
+    now = datetime.datetime.utcnow()
+    if max(input_df[DateColName]).timestamp() > now.timestamp():
+        raise Exception("Date is in the future. Please check your input dataset or use the CO2 forecast component.")
+
 # # Check if extracted_geopoint_longitude and extracted_geopoint_latitudes columns names are not already used:
-if 'extracted_geopoint_longitude' not in columns_names or 'extracted_geopoint_longitude' not in columns_names: 
+if 'extracted_geopoint_longitude' not in columns_names or 'extracted_geopoint_longitude' not in columns_names:
     extracted_longitude = 'extracted_geopoint_longitude'
     extracted_latitude = 'extracted_geopoint_latitude'
 else:
@@ -79,9 +85,6 @@ else:
 # setup request
 r = requests.session()
 
-# parse date column
-#input_df[DateColName] = parser.parse(input_df[DateColName])
-input_df[DateColName] = pd.to_datetime(input_df[DateColName],format="%Y-%m-%dT%H:%M:%S.%fZ",utc=True)
 
 # ##################################### RTE ######################################
 if APIProvider == 'RTE':
@@ -110,7 +113,7 @@ if APIProvider == 'RTE':
     df = df.rename(columns={"date_heure": "co2_date_time", "taux_co2": "carbon_intensity"})
 
     # convert co2_date_time to datetime format:
-    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'],utc=True)
+    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'], utc=True)
 
     # join on date with input_df:
     output_df = pd.merge_asof(input_df.sort_values(by=DateColName), df.sort_values(by='co2_date_time'), left_on=DateColName, right_on='co2_date_time')
@@ -118,16 +121,16 @@ if APIProvider == 'RTE':
 # ##################################### ElectricityMap ######################################
 
 if APIProvider == 'ElectricityMap':
-    
+
     # Converting geopoint to longitude and latitude to fit the API endpoint:
     input_df["extracted_geopoint"] = input_df[coordinates].str.replace(r'[POINT()]', '', regex=True)
     input_df["extracted_geopoint"] = input_df["extracted_geopoint"].str.split(" ", expand=False)
-    split_df = pd.DataFrame(input_df["extracted_geopoint"].tolist(), columns=[extracted_longitude,extracted_latitude])
+    split_df = pd.DataFrame(input_df["extracted_geopoint"].tolist(), columns=[extracted_longitude, extracted_latitude])
     input_df = input_df.drop(columns="extracted_geopoint")
     input_df = pd.concat([input_df, split_df], axis=1)
 
     # GroupBy latitude, longitude to retrieve only one API call per coordinates:
-    uniquelatlon = input_df.groupby([extracted_longitude,extracted_latitude])[DateColName].unique()
+    uniquelatlon = input_df.groupby([extracted_longitude, extracted_latitude])[DateColName].unique()
     df = pd.DataFrame()
 
     # for each unique location location and with 10 days chunks (to avoid API limit):
@@ -140,11 +143,6 @@ if APIProvider == 'ElectricityMap':
         now = datetime.datetime.utcnow()
         max_date = parser.parse(str(MaxDate))
         min_date = parser.parse(str(MinDate))
-        
-        is_forecast = False
-        if max_date.timestamp() > now.timestamp():
-            is_forecast = True
-            API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/forecast'
 
         # Get only the day from the dates:
         MinDateDay = min_date.strftime("%Y-%m-%d")
@@ -157,12 +155,10 @@ if APIProvider == 'ElectricityMap':
             params = {
                 'lat': uniquelatlon.index[index][1],
                 'lon': uniquelatlon.index[index][0],
+                'start': chunked_dates[i][0],
+                'end': chunked_dates[i][-1]
             }
-            
-            if not is_forecast:
-                params['start'] = chunked_dates[i][0]
-                params['end'] = chunked_dates[i][-1]
-
+    
             # make request and create df dataframe with response from API:
             response = r.get(API_ENDPOINT, params=params, auth=('auth-token', API_TOKEN))
             dictr = response.json()
@@ -171,7 +167,7 @@ if APIProvider == 'ElectricityMap':
             dfa['longitude'] = uniquelatlon.index[index][0]
 
             df = df.append(dfa, ignore_index=True)
-            
+
     # Drop and rename df columns before joining
 
     # keep only on date_heure and taux_co2 from df:
@@ -181,12 +177,12 @@ if APIProvider == 'ElectricityMap':
 
     # rename date_heure in co2_dateTime and taux_co2 in carbon_intensity
     # renaming latitude and longitude to extracted_latitude and extracted_longitude for join_asof
-    df = df.rename(columns={"datetime": "co2_date_time", "carbonIntensity": "carbon_intensity","latitude": extracted_latitude, "longitude": extracted_longitude})
+    df = df.rename(columns={"datetime": "co2_date_time", "carbonIntensity": "carbon_intensity", "latitude": extracted_latitude, "longitude": extracted_longitude})
 
     # join on date with input_df:
-    
+
     # convert co2_date_time to datetime format:
-    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'],format="%Y-%m-%dT%H:%M:%S.%fZ",utc=True)
+    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
 
     output_df = pd.merge_asof(
         input_df.sort_values(by=[DateColName]),
@@ -196,8 +192,8 @@ if APIProvider == 'ElectricityMap':
         right_on=['co2_date_time']
     )
 
-    #drop lat and lon columns (not needed):
-    output_df.drop([extracted_latitude,extracted_longitude],axis=1,inplace=True)
+    # drop lat and lon columns (not needed):
+    output_df.drop([extracted_latitude, extracted_longitude], axis=1, inplace=True)
 
 # ##################################### output ######################################
 

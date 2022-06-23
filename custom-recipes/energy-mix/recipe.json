@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Energy mix",
-        "description": "Use electricitymap API to get energy mix.",
+        "description": "Use electricitymap API to get energy mix",
         "icon": "icon-bolt"
     },
 
