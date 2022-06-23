@@ -79,25 +79,21 @@ else:
 # setup request
 r = requests.session()
 
+# parse date column
+#input_df[DateColName] = parser.parse(input_df[DateColName])
+input_df[DateColName] = pd.to_datetime(input_df[DateColName],format="%Y-%m-%dT%H:%M:%S.%fZ",utc=True)
 
 # ##################################### RTE ######################################
 if APIProvider == 'RTE':
     # Get MinDate and MaxDate to compute the number of rows to be requested:
-    MinDate = min(input_df[DateColName])
-    MaxDate = max(input_df[DateColName])
-
-    # Modify MinDate and MaxDate to have the right format for the query
-    min_date = MinDate.isoformat()
-    max_date = MaxDate.isoformat()
-
-    # Convert DateColName to datetime format:
-    input_df[DateColName] = pd.to_datetime(input_df[DateColName])
+    min_date = min(input_df[DateColName])
+    max_date = max(input_df[DateColName])
 
     # Parameters for API call:
     params = {
         'dataset': 'eco2mix-national-cons-def',
         'timezone': 'Europe/Paris',
-        'q': 'date_heure:['+min_date+' TO '+max_date+']'
+        'q': 'date_heure:['+str(min_date.isoformat())+' TO '+str(max_date.isoformat())+']'
     }
 
     # make request and create df dataframe with response from API:
@@ -114,7 +110,7 @@ if APIProvider == 'RTE':
     df = df.rename(columns={"date_heure": "co2_date_time", "taux_co2": "carbon_intensity"})
 
     # convert co2_date_time to datetime format:
-    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'], utc=True)
+    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'],utc=True)
 
     # join on date with input_df:
     output_df = pd.merge_asof(input_df.sort_values(by=DateColName), df.sort_values(by='co2_date_time'), left_on=DateColName, right_on='co2_date_time')
@@ -126,7 +122,7 @@ if APIProvider == 'ElectricityMap':
     # Converting geopoint to longitude and latitude to fit the API endpoint:
     input_df["extracted_geopoint"] = input_df[coordinates].str.replace(r'[POINT()]', '', regex=True)
     input_df["extracted_geopoint"] = input_df["extracted_geopoint"].str.split(" ", expand=False)
-    split_df = pd.DataFrame(input_df["extracted_geopoint"].tolist(), columns=[extracted_latitude,extracted_longitude])
+    split_df = pd.DataFrame(input_df["extracted_geopoint"].tolist(), columns=[extracted_longitude,extracted_latitude])
     input_df = input_df.drop(columns="extracted_geopoint")
     input_df = pd.concat([input_df, split_df], axis=1)
 
@@ -144,6 +140,11 @@ if APIProvider == 'ElectricityMap':
         now = datetime.datetime.utcnow()
         max_date = parser.parse(str(MaxDate))
         min_date = parser.parse(str(MinDate))
+        
+        is_forecast = False
+        if max_date.timestamp() > now.timestamp():
+            is_forecast = True
+            API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/forecast'
 
         # Get only the day from the dates:
         MinDateDay = min_date.strftime("%Y-%m-%d")
@@ -154,41 +155,23 @@ if APIProvider == 'ElectricityMap':
 
         for i in range(len(chunked_dates)):
             params = {
-                'lat': uniquelatlon.index[index][0],
-                'lon': uniquelatlon.index[index][1],
-                'start': chunked_dates[i][0],
-                'end': chunked_dates[i][-1]
+                'lat': uniquelatlon.index[index][1],
+                'lon': uniquelatlon.index[index][0],
             }
+            
+            if not is_forecast:
+                params['start'] = chunked_dates[i][0]
+                params['end'] = chunked_dates[i][-1]
 
             # make request and create df dataframe with response from API:
             response = r.get(API_ENDPOINT, params=params, auth=('auth-token', API_TOKEN))
             dictr = response.json()
             dfa = json_normalize(dictr['data'])
-            dfa['latitude'] = uniquelatlon.index[index][0]
-            dfa['longitude'] = uniquelatlon.index[index][1]
+            dfa['latitude'] = uniquelatlon.index[index][1]
+            dfa['longitude'] = uniquelatlon.index[index][0]
 
             df = df.append(dfa, ignore_index=True)
-
-        if(max_date.timestamp() > now.timestamp()):
-
-            # Change api endpoint:
-            API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/forecast'
-
-            # Change the parameters.
-            params = {
-                'lat': uniquelatlon.index[index][0],
-                'lon': uniquelatlon.index[index][1],
-            }
-
-            # Same as before: make request and create df dataframe with response from API:
-            response = r.get(API_ENDPOINT, params=params, auth=('auth-token', API_TOKEN))
-            dictr = response.json()
-            dfa = json_normalize(dictr['forecast'])
-            dfa['latitude'] = uniquelatlon.index[index][0]
-            dfa['longitude'] = uniquelatlon.index[index][1]
-
-            df = df.append(dfa, ignore_index=True)
-
+            
     # Drop and rename df columns before joining
 
     # keep only on date_heure and taux_co2 from df:
@@ -201,12 +184,9 @@ if APIProvider == 'ElectricityMap':
     df = df.rename(columns={"datetime": "co2_date_time", "carbonIntensity": "carbon_intensity","latitude": extracted_latitude, "longitude": extracted_longitude})
 
     # join on date with input_df:
-
+    
     # convert co2_date_time to datetime format:
-    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'])
-
-    # convert DateColName to datetime format: 
-    input_df[DateColName] = pd.to_datetime(input_df[DateColName])
+    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'],format="%Y-%m-%dT%H:%M:%S.%fZ",utc=True)
 
     output_df = pd.merge_asof(
         input_df.sort_values(by=[DateColName]),
