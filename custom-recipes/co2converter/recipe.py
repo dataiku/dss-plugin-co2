@@ -49,6 +49,12 @@ if DateColName not in columns_names:
 if ConsumptionColName not in columns_names:
     raise Exception("Not able to find the '%s' column" % ConsumptionColName)
 
+# Date is not in the future:
+input_df[DateColName] = pd.to_datetime(input_df[DateColName], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
+now = datetime.datetime.utcnow()
+if max(input_df[DateColName]).timestamp() > now.timestamp():
+    raise Exception("Date is in the future. Please check your input dataset or use the CO2 forecast component.")
+
 # ## Coordinates column:
 if APIProvider == 'ElectricityMap':
     if coordinates not in columns_names:
@@ -67,12 +73,6 @@ if APIProvider == 'ElectricityMap':
     # API token validity:
     if API_TOKEN is None:
         raise Exception("No electricityMap API token found.")
-
-    # Date is not in the future:
-    input_df[DateColName] = pd.to_datetime(input_df[DateColName], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
-    now = datetime.datetime.utcnow()
-    if max(input_df[DateColName]).timestamp() > now.timestamp():
-        raise Exception("Date is in the future. Please check your input dataset or use the CO2 forecast component.")
 
 # # Check if extracted_geopoint_longitude and extracted_geopoint_latitudes columns names are not already used:
 if 'extracted_geopoint_longitude' not in columns_names or 'extracted_geopoint_longitude' not in columns_names:
