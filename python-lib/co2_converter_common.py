@@ -1,4 +1,5 @@
 import datetime
+import pandas as pd
 
 
 def date_chunk(start, end, chunk_size):
@@ -34,3 +35,16 @@ def date_chunk(start, end, chunk_size):
         date_list_size -= chunk_size
 
     return chunked_list
+
+
+def extract_lat_lon_from_geopoint(df, geopoint_col, extracted_latitude_col, extracted_longitude_col):
+    df["extracted_geopoint"] = df[geopoint_col].str.replace(r'[POINT()]', '', regex=True)
+    df["extracted_geopoint"] = df["extracted_geopoint"].str.split(" ", expand=False)
+    split_df = pd.DataFrame(df["extracted_geopoint"].tolist(), columns=[extracted_longitude_col, extracted_latitude_col])
+    df = df.drop(columns="extracted_geopoint")
+    df = pd.concat([df, split_df], axis=1)
+    return df
+
+
+def merge_w_nearest_keys(left, right, left_on, right_on, by=None):
+    return pd.merge_asof(left.sort_values(by=left_on), right.sort_values(by=right_on),by=by, left_on=left_on, right_on=right_on)
