@@ -1,5 +1,6 @@
 import datetime
 import pandas as pd
+import re
 
 
 def date_chunk(start, end, chunk_size):
@@ -37,13 +38,21 @@ def date_chunk(start, end, chunk_size):
     return chunked_list
 
 
-def extract_lat_lon_from_geopoint(df, geopoint_col, extracted_latitude_col, extracted_longitude_col):
-    df["extracted_geopoint"] = df[geopoint_col].str.replace(r'[POINT()]', '', regex=True)
-    df["extracted_geopoint"] = df["extracted_geopoint"].str.split(" ", expand=False)
-    split_df = pd.DataFrame(df["extracted_geopoint"].tolist(), columns=[extracted_longitude_col, extracted_latitude_col])
-    df = df.drop(columns="extracted_geopoint")
-    df = pd.concat([df, split_df], axis=1)
-    return df
+def parse_wkt_point(point):
+    # Paris latitude 48.856614 longitude 2.352222
+    # Point(longitude latitude)
+    # Paris = Point(2.352222 48.856614) correct
+    match = re.search(r'\(\s?(\S+)\s+(\S+)\s?\)', point)
+    # regex from https://gis.stackexchange.com/questions/246504/wkt-to-some-object-that-will-give-me-longitude-and-latitude-properties
+    if match:
+        try:
+            longitude = float(match.group(1))
+            latitude = float(match.group(2))
+        except:
+            return [None, None]
+        if (-90 <= latitude <= 90) and (-180 <= longitude <= 180):
+            return [longitude, latitude]
+    return [None, None]
 
 
 def merge_w_nearest_keys(left, right, left_on, right_on, by=None):

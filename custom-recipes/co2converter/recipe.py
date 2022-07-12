@@ -6,7 +6,7 @@ from io import StringIO
 from pandas.io.json import json_normalize
 import datetime
 from dateutil import parser
-from co2_converter_common import date_chunk, extract_lat_lon_from_geopoint, merge_w_nearest_keys
+from co2_converter_common import date_chunk, parse_wkt_point, merge_w_nearest_keys
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 
 # Inputs
@@ -68,21 +68,20 @@ if APIProvider == 'ElectricityMap':
     if not input_df[coordinates].str.startswith('POINT(').all():
         raise ValueError('Invalid coordinates. Geopoint format required: POINT(longitude latitude)')
 
-    # # Check if latitude and longitude are in the correct range:
-    # to be done when the method will be validated
-
 # # Check input data validity:
     # API token validity:
     if API_TOKEN is None:
         raise Exception("No electricityMap API token found.")
 
-# # Check if extracted_geopoint_longitude and extracted_geopoint_latitudes columns names are not already used:
-if 'extracted_geopoint_longitude' not in columns_names or 'extracted_geopoint_longitude' not in columns_names:
+# # Check if extracted_geopoint_longitude, extracted_geopoint_latitudes and extracted_geopoint columns names are not already used:
+if 'extracted_geopoint_longitude' not in columns_names or 'extracted_geopoint_longitude' or 'extracted_geopoint' not in columns_names:
+    extracted_geopoint = 'extracted_geopoint'
     extracted_longitude = 'extracted_geopoint_longitude'
     extracted_latitude = 'extracted_geopoint_latitude'
 else:
-    extracted_longitude = 'extracted_geopoint_longitude_1'
-    extracted_latitude = 'extracted_geopoint_latitude_1'
+    extracted_geopoint = 'extracted_geopoint_42'
+    extracted_longitude = 'extracted_geopoint_longitude_42'
+    extracted_latitude = 'extracted_geopoint_latitude_42'
 
 # setup request
 r = requests.session()
@@ -125,7 +124,9 @@ if APIProvider == 'RTE':
 
 if APIProvider == 'ElectricityMap':
 
-    input_df = extract_lat_lon_from_geopoint(input_df, coordinates, extracted_latitude, extracted_longitude)
+    input_df[extracted_geopoint] = input_df[coordinates].apply(lambda point: parse_wkt_point(point))
+    input_df[extracted_longitude] = input_df[extracted_geopoint].apply(lambda point: point[0])
+    input_df[extracted_latitude] = input_df[extracted_geopoint].apply(lambda point: point[1])
 
     # GroupBy latitude, longitude to retrieve only one API call per coordinates:
     uniquelatlons = input_df.groupby([extracted_longitude, extracted_latitude])[DateColName].unique()
@@ -185,8 +186,8 @@ if APIProvider == 'ElectricityMap':
     # join on latitude, longitude and closest dates with input_df:
     output_df = merge_w_nearest_keys(input_df, df, DateColName, 'co2_date_time', by=[extracted_latitude, extracted_longitude])
 
-    # drop lat and lon columns (not needed):
-    output_df.drop([extracted_latitude, extracted_longitude], axis=1, inplace=True)
+    # drop extracted columns (not needed):
+    output_df.drop([extracted_geopoint, extracted_latitude, extracted_longitude], axis=1, inplace=True)
 
 # ##################################### output ######################################
 
