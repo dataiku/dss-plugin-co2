@@ -6,7 +6,7 @@ from io import StringIO
 from pandas.io.json import json_normalize
 import datetime
 from dateutil import parser
-from co2_converter_common import date_chunk, parse_wkt_point, merge_w_nearest_keys
+from co2_converter_common import date_chunk, parse_wkt_point, merge_w_nearest_keys, get_geopoint_column_names
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
 
 # Inputs
@@ -23,18 +23,18 @@ output_dataset = output_datasets[0]
 input_df = input_dataset.get_dataframe()
 
 # Load input Parameters:
-APIProvider = get_recipe_config().get('APIProvider')
-DateColName = get_recipe_config().get('DateColName')
-ConsumptionColName = get_recipe_config().get('ConsumptionColName')
+api_provider = get_recipe_config().get('api_provider')
+date_column_name = get_recipe_config().get('date_column_name')
+consumption_column_name = get_recipe_config().get('consumption_column_name')
 
 # API endpoint parameters conditions:
-if APIProvider == 'RTE':
+if api_provider == 'RTE':
     API_ENDPOINT = 'https://opendata.reseaux-energies.fr/api/records/1.0/download/'
 
-if APIProvider == 'ElectricityMap':
+if api_provider == 'ElectricityMap':
     API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/past-range'
     API_TOKEN = get_recipe_config().get("api_configuration_preset").get("APITOKEN")
-    coordinates = get_recipe_config().get('Coordinates')
+    coordinates = get_recipe_config().get('coordinates')
 
 # Input validation:
 
@@ -42,21 +42,21 @@ if APIProvider == 'ElectricityMap':
 columns_names = input_df.columns
 
 # ## Date Column:
-if DateColName not in columns_names:
-    raise Exception("Not able to find the '%s' column" % DateColName)
+if date_column_name not in columns_names:
+    raise Exception("Not able to find the '%s' column" % date_column_name)
 
 # ## Consumption Column:
-if ConsumptionColName not in columns_names:
-    raise Exception("Not able to find the '%s' column" % ConsumptionColName)
+if consumption_column_name not in columns_names:
+    raise Exception("Not able to find the '%s' column" % consumption_column_name)
 
 # Date is not in the future:
-input_df[DateColName] = pd.to_datetime(input_df[DateColName], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
+input_df[date_column_name] = pd.to_datetime(input_df[date_column_name], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
 now = datetime.datetime.utcnow()
-if max(input_df[DateColName]).timestamp() > now.timestamp():
+if max(input_df[date_column_name]).timestamp() > now.timestamp():
     raise Exception("Date is in the future. Please check your input dataset or use the CO2 forecast component.")
 
 # ## Coordinates column:
-if APIProvider == 'ElectricityMap':
+if api_provider == 'ElectricityMap':
     if coordinates not in columns_names:
         raise Exception("Not able to find the '%s' column" % coordinates)
 
@@ -73,25 +73,17 @@ if APIProvider == 'ElectricityMap':
     if API_TOKEN is None:
         raise Exception("No electricityMap API token found.")
 
-# # Check if extracted_geopoint_longitude, extracted_geopoint_latitudes and extracted_geopoint columns names are not already used:
-if 'extracted_geopoint_longitude' not in columns_names or 'extracted_geopoint_longitude' or 'extracted_geopoint' not in columns_names:
-    extracted_geopoint = 'extracted_geopoint'
-    extracted_longitude = 'extracted_geopoint_longitude'
-    extracted_latitude = 'extracted_geopoint_latitude'
-else:
-    extracted_geopoint = 'extracted_geopoint_42'
-    extracted_longitude = 'extracted_geopoint_longitude_42'
-    extracted_latitude = 'extracted_geopoint_latitude_42'
+extracted_geopoint, extracted_longitude, extracted_latitude = get_geopoint_column_names(columns_names)
 
 # setup request
-r = requests.session()
+session = requests.session()
 
 
 # ##################################### RTE ######################################
-if APIProvider == 'RTE':
+if api_provider == 'RTE':
     # Get MinDate and MaxDate to compute the number of rows to be requested:
-    min_date = min(input_df[DateColName])
-    max_date = max(input_df[DateColName])
+    min_date = min(input_df[date_column_name])
+    max_date = max(input_df[date_column_name])
 
     # Parameters for API call:
     params = {
@@ -101,90 +93,87 @@ if APIProvider == 'RTE':
     }
 
     # make request and create df dataframe with response from API:
-    response = r.get(API_ENDPOINT, params=params)
-    data = StringIO(str(response.content, 'utf-8'))
-    df = pd.read_csv(data, sep=';')
+    response = session.get(API_ENDPOINT, params=params)
+    data_buffer = StringIO(str(response.content, 'utf-8'))
+    data = pd.read_csv(data_buffer, sep=';')
 
     # keep only date_heure and taux_co2 from df:
-    col_list = ['date_heure', 'taux_co2']
-    df = df[col_list]
-    df = df.dropna()
+    column_names_to_keep = ['date_heure', 'taux_co2']
+    data = data[column_names_to_keep]
+    data = data.dropna()
 
     # rename date_heure in co2_dateTime and taux_co2 in carbon_intensity
-    df = df.rename(columns={"date_heure": "co2_date_time", "taux_co2": "carbon_intensity"})
+    data = data.rename(columns={"date_heure": "co2_date_time", "taux_co2": "carbon_intensity"})
 
     # convert co2_date_time to datetime format:
-    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'], utc=True)
+    data['co2_date_time'] = pd.to_datetime(data['co2_date_time'], utc=True)
 
     # join on closest dates with input_df:
-    output_df = merge_w_nearest_keys(input_df, df, DateColName, 'co2_date_time')
+    output_df = merge_w_nearest_keys(input_df, data, date_column_name, 'co2_date_time')
 
 
 # ##################################### ElectricityMap ######################################
 
-if APIProvider == 'ElectricityMap':
+if api_provider == 'ElectricityMap':
 
     input_df[extracted_geopoint] = input_df[coordinates].apply(lambda point: parse_wkt_point(point))
     input_df[extracted_longitude] = input_df[extracted_geopoint].apply(lambda point: point[0])
     input_df[extracted_latitude] = input_df[extracted_geopoint].apply(lambda point: point[1])
 
     # GroupBy latitude, longitude to retrieve only one API call per coordinates:
-    uniquelatlons = input_df.groupby([extracted_longitude, extracted_latitude])[DateColName].unique()
-    df = pd.DataFrame()
+    dates_per_unique_latitude_longitudes = input_df.groupby([extracted_longitude, extracted_latitude])[date_column_name].unique()
+    data = pd.DataFrame()
 
     # for each unique location location and with 10 days chunks (to avoid API limit):
 
-    for index, x in enumerate(uniquelatlons):
-        MinDate = x.min()
-        MaxDate = x.max()
+    for index_latitude_longitude, dates in enumerate(dates_per_unique_latitude_longitudes):
 
         # Parse dates:
         now = datetime.datetime.utcnow()
-        max_date = parser.parse(str(MaxDate))
-        min_date = parser.parse(str(MinDate))
+        max_date = parser.parse(str(dates.max()))
+        min_date = parser.parse(str(dates.min()))
 
         # Get only the day from the dates:
-        MinDateDay = min_date.strftime("%Y-%m-%d")
-        MaxDateDay = max_date.strftime("%Y-%m-%d")
+        min_date_day = min_date.strftime("%Y-%m-%d")
+        max_date_day = max_date.strftime("%Y-%m-%d")
 
         # As the API is limited to 10 days, I create chunks of dates:
-        chunked_dates = date_chunk(MinDateDay, MaxDateDay, 10)
+        chunked_dates = date_chunk(min_date_day, max_date_day, 10)
 
-        for i in range(len(chunked_dates)):
+        for index_chunked_dates in range(len(chunked_dates)):
             params = {
-                'lat': uniquelatlons.index[index][1],
-                'lon': uniquelatlons.index[index][0],
-                'start': chunked_dates[i][0],
-                'end': chunked_dates[i][-1]
+                'lat': dates_per_unique_latitude_longitudes.index[index_latitude_longitude][1],
+                'lon': dates_per_unique_latitude_longitudes.index[index_latitude_longitude][0],
+                'start': chunked_dates[index_chunked_dates][0],
+                'end': chunked_dates[index_chunked_dates][-1]
             }
-    
+
             # make request and create df dataframe with response from API:
-            response = r.get(API_ENDPOINT, params=params, auth=('auth-token', API_TOKEN))
-            dictr = response.json()
-            dfa = json_normalize(dictr['data'])
-            dfa['latitude'] = uniquelatlons.index[index][1]
-            dfa['longitude'] = uniquelatlons.index[index][0]
-            df = df.append(dfa, ignore_index=True)
+            response = session.get(API_ENDPOINT, params=params, auth=('auth-token', API_TOKEN))
+            response_json = response.json()
+            chunked_data = json_normalize(response_json['data'])
+            chunked_data['latitude'] = dates_per_unique_latitude_longitudes.index[index_latitude_longitude][1]
+            chunked_data['longitude'] = dates_per_unique_latitude_longitudes.index[index_latitude_longitude][0]
+            data = data.append(chunked_data, ignore_index=True)
 
     # Drop and rename df columns before joining
 
     # keep only date_heure and taux_co2 from df:
-    col_list = ['datetime', 'carbonIntensity', 'latitude', 'longitude']
-    df = df[col_list]
-    df = df.dropna()
+    column_names_to_keep = ['datetime', 'carbonIntensity', 'latitude', 'longitude']
+    data = data[column_names_to_keep]
+    data = data.dropna()
 
     # rename date_heure in co2_dateTime and taux_co2 in carbon_intensity
     # renaming latitude and longitude to extracted_latitude and extracted_longitude for join_asof
-    df = df.rename(columns={
-        "datetime": "co2_date_time", "carbonIntensity": "carbon_intensity", "latitude": extracted_latitude, "longitude": extracted_longitude})
-
-    # join on date with input_df:
+    data = data.rename(columns={
+        "datetime": "co2_date_time", "carbonIntensity": "carbon_intensity", "latitude": extracted_latitude, "longitude": extracted_longitude}
+    )
 
     # convert co2_date_time to datetime format:
-    df['co2_date_time'] = pd.to_datetime(df['co2_date_time'], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
+    data['co2_date_time'] = pd.to_datetime(data['co2_date_time'], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
 
     # join on latitude, longitude and closest dates with input_df:
-    output_df = merge_w_nearest_keys(input_df, df, DateColName, 'co2_date_time', by=[extracted_latitude, extracted_longitude])
+    output_df = merge_w_nearest_keys(input_df, data, date_column_name, 'co2_date_time', by=[extracted_latitude, extracted_longitude])
 
     # drop extracted columns (not needed):
     output_df.drop([extracted_geopoint, extracted_latitude, extracted_longitude], axis=1, inplace=True)
@@ -193,7 +182,7 @@ if APIProvider == 'ElectricityMap':
 
 # compute co2emission:
 # taux_co2 'standard' unit is in g/kwh, but I choose to convert the result into kgeqCO2:
-output_df["co2_emission"] = (output_df[ConsumptionColName] * output_df['carbon_intensity']) / 1000
+output_df["co2_emission"] = (output_df[consumption_column_name] * output_df['carbon_intensity']) / 1000
 
 # Write output
 output_dataset.write_with_schema(output_df)

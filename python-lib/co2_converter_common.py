@@ -57,3 +57,17 @@ def parse_wkt_point(point):
 
 def merge_w_nearest_keys(left, right, left_on, right_on, by=None):
     return pd.merge_asof(left.sort_values(by=left_on), right.sort_values(by=right_on),by=by, left_on=left_on, right_on=right_on)
+
+
+def get_geopoint_column_names(columns_names):
+    # # Check if extracted_geopoint_longitude, extracted_geopoint_latitudes and extracted_geopoint columns names are not already used:
+    if 'extracted_geopoint_longitude' not in columns_names or 'extracted_geopoint_longitude' or 'extracted_geopoint' not in columns_names:
+        extracted_geopoint = 'extracted_geopoint'
+        extracted_longitude = 'extracted_geopoint_longitude'
+        extracted_latitude = 'extracted_geopoint_latitude'
+    else:
+        extracted_geopoint = 'extracted_geopoint_42'
+        extracted_longitude = 'extracted_geopoint_longitude_42'
+        extracted_latitude = 'extracted_geopoint_latitude_42'
+
+    return extracted_geopoint, extracted_longitude, extracted_latitude

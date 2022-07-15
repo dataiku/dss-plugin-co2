@@ -33,7 +33,7 @@
 
     "params": [
         {
-            "name": "DateColName",
+            "name": "date_column_name",
             "label": "Date column",
             "type": "COLUMN",
             "description": "",
@@ -41,7 +41,7 @@
             "columnRole":"input_ds"
         },
         {
-            "name": "ConsumptionColName",
+            "name": "consumption_column_name",
             "label": "Electricity consumption column",
             "type": "COLUMN",
             "description": "Electricity consumption in kWh",
@@ -51,7 +51,7 @@
         },
 
         {
-            "name": "APIProvider",
+            "name": "api_provider",
             "label": "API Provider",
             "type": "SELECT",
             "description": "RTE is for France only. Electricitymap covers many locations." ,
@@ -82,7 +82,7 @@
         },
         
         {
-            "name": "Coordinates",
+            "name": "coordinates",
             "type": "COLUMN",
             "allowedColumnTypes": ["geopoint","string"],
             "label" : "Coordinates geopoint",

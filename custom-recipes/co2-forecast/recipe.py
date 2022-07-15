@@ -3,8 +3,8 @@ import dataiku
 import pandas as pd
 import requests
 from pandas.io.json import json_normalize
-from dateutil import parser
 from dataiku.customrecipe import get_input_names_for_role, get_recipe_config, get_output_names_for_role
+from co2_converter_common import parse_wkt_point, get_geopoint_column_names
 
 # Inputs
 input_names = get_input_names_for_role('input_ds')
@@ -22,7 +22,7 @@ input_df = input_dataset.get_dataframe()
 
 API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/forecast'
 API_TOKEN = get_recipe_config().get("api_configuration_preset").get("APITOKEN")
-coordinates = get_recipe_config().get('Coordinates')
+coordinates = get_recipe_config().get('coordinates')
 
 # Input validation:
 
@@ -48,55 +48,47 @@ if not input_df[coordinates].str.startswith('POINT(').all():
 if API_TOKEN is None:
     raise Exception("No electricityMap API token found.")
 
-# # Check if extracted_geopoint_longitude and extracted_geopoint_latitudes columns names are not already used:
-if 'extracted_geopoint_longitude' not in columns_names or 'extracted_geopoint_longitude' not in columns_names:
-    extracted_longitude = 'extracted_geopoint_longitude'
-    extracted_latitude = 'extracted_geopoint_latitude'
-else:
-    extracted_longitude = 'extracted_geopoint_longitude_1'
-    extracted_latitude = 'extracted_geopoint_latitude_1'
+extracted_geopoint, extracted_longitude, extracted_latitude = get_geopoint_column_names(columns_names)
 
 # setup request
-r = requests.session()
+session = requests.session()
 
-# Converting geopoint to longitude and latitude to fit the API endpoint:
-input_df["extracted_geopoint"] = input_df[coordinates].str.replace(r'[POINT()]', '', regex=True)
-input_df["extracted_geopoint"] = input_df["extracted_geopoint"].str.split(" ", expand=False)
-split_df = pd.DataFrame(input_df["extracted_geopoint"].tolist(), columns=[extracted_longitude, extracted_latitude])
-input_df = input_df.drop(columns="extracted_geopoint")
-input_df = pd.concat([input_df, split_df], axis=1)
+
+extracted_geopoint, extracted_longitude, extracted_latitude = get_geopoint_column_names(columns_names)
+# Parse Geopoint to longitude and latitude:
+input_df[extracted_geopoint] = input_df[coordinates].apply(lambda point: parse_wkt_point(point))
+input_df[extracted_longitude] = input_df[extracted_geopoint].apply(lambda point: point[0])
+input_df[extracted_latitude] = input_df[extracted_geopoint].apply(lambda point: point[1])
 
 # GroupBy latitude, longitude to retrieve only one API call per coordinates:
-uniquelatlon = input_df[[extracted_longitude, extracted_latitude]].drop_duplicates().reset_index(drop=True)
-df = pd.DataFrame()
+unique_latitudes_longitudes = input_df[[extracted_longitude, extracted_latitude]].drop_duplicates().reset_index(drop=True)
+data = pd.DataFrame()
 
 # for each unique location location:
 
-for index, x in uniquelatlon.iterrows():
+for index, unique_latitude_longitude in unique_latitudes_longitudes.iterrows():
     params = {
-        'lat': uniquelatlon[extracted_latitude][index],
-        'lon': uniquelatlon[extracted_longitude][index],
+        'lat': unique_latitudes_longitudes[extracted_latitude][index],
+        'lon': unique_latitudes_longitudes[extracted_longitude][index],
     }
 
     # make request and create df dataframe with response from API:
-    response = r.get(API_ENDPOINT, params=params, auth=('auth-token', API_TOKEN))
-    dictr = response.json()
-    dfa = json_normalize(dictr["forecast"])
-    dfa['latitude'] = uniquelatlon[extracted_latitude][index]
-    dfa['longitude'] = uniquelatlon[extracted_longitude][index]
-    dfa[coordinates] = input_df[coordinates][index]
+    response = session.get(API_ENDPOINT, params=params, auth=('auth-token', API_TOKEN))
+    response_json = response.json()
+    data_buffer = json_normalize(response_json["forecast"])
+    data_buffer['latitude'] = unique_latitudes_longitudes[extracted_latitude][index]
+    data_buffer['longitude'] = unique_latitudes_longitudes[extracted_longitude][index]
+    data_buffer[coordinates] = input_df[coordinates][index]
 
-    df = df.append(dfa, ignore_index=True)
+    data = data.append(data_buffer, ignore_index=True)
 
 # Drop and rename df columns before joining
 # keep only on date_heure and taux_co2 from df:
-col_list = ['datetime', 'carbonIntensity', 'latitude', 'longitude', coordinates]
-df = df[col_list]
-df = df.dropna()
+column_names_to_keep = ['datetime', 'carbonIntensity', 'latitude', 'longitude', coordinates]
+data = data[column_names_to_keep]
+data = data.dropna()
 
-# renaming latitude and longitude to extracted_latitude and extracted_longitude for join_asof
-df = df.rename(columns={"datetime": "co2_date_time", "carbonIntensity": "carbon_intensity"})
-
+data = data.rename(columns={"datetime": "co2_date_time", "carbonIntensity": "carbon_intensity"})
 
 # Write output
-output_dataset.write_with_schema(df)
+output_dataset.write_with_schema(data)

@@ -42,7 +42,7 @@
         },
         
         {
-            "name": "Coordinates",
+            "name": "coordinates",
             "type": "COLUMN",
             "allowedColumnTypes": ["geopoint","string"],
             "label" : "Coordinates geopoint",
