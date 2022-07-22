@@ -55,6 +55,7 @@
             "label": "API Provider",
             "type": "SELECT",
             "description": "RTE is for France only. Electricitymap covers many locations." ,
+            "defaultValue": "RTE",
             "selectChoices": [
                 {
                     "value": "RTE",
@@ -65,19 +66,21 @@
                     "label": "ElectricityMap"
                 }
             ]
+        
         },
+        
         {
         "name": "sep_conf",
         "type": "SEPARATOR",
         "label" : "Configuration",
-        "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
+        "visibilityCondition" : "model.api_provider == 'ElectricityMap'"
         },
         {
             "name": "api_configuration_preset",
             "label": "API configuration preset",
             "type": "PRESET",
             "parameterSetId": "credentials",
-            "visibilityCondition" : "model.APIProvider == 'ElectricityMap'",
+            "visibilityCondition" : "model.api_provider == 'ElectricityMap'",
             "mandatory": false
         },
         
@@ -87,7 +90,7 @@
             "allowedColumnTypes": ["geopoint","string"],
             "label" : "Coordinates geopoint",
             "columnRole":"input_ds",
-            "visibilityCondition" : "model.APIProvider == 'ElectricityMap'"
+            "visibilityCondition" : "model.api_provider == 'ElectricityMap'"
         }
 
     ],

@@ -1,13 +1,11 @@
 import pandas as pd
 import requests
 from pandas.io.json import json_normalize
-from dataiku.customrecipe import get_recipe_config
 import co2_converter_common as ccc
 
 # Get input parameters:
 input_df, output_dataset, columns_names = ccc.get_input_output()
 coordinates = ccc.get_coordinates(input_df)
-api_provider = get_recipe_config().get('api_provider')
 extracted_geopoint, extracted_longitude, extracted_latitude = ccc.get_geopoint_column_names(columns_names)
 
 # API endpoint:
