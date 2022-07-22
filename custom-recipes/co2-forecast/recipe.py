@@ -8,8 +8,6 @@ import co2_converter_common as ccc
 input_df, output_dataset, columns_names = ccc.get_input_output()
 coordinates = ccc.get_coordinates(input_df)
 api_provider = get_recipe_config().get('api_provider')
-date_column_name = ccc.get_date_column_name(input_df)
-consumption_column_name = ccc.get_consumption_column_name(input_df)
 extracted_geopoint, extracted_longitude, extracted_latitude = ccc.get_geopoint_column_names(columns_names)
 
 # API endpoint:

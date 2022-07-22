@@ -9,14 +9,12 @@ from dataiku.customrecipe import get_recipe_config
 # Get input parameters:
 input_df, output_dataset, columns_names = ccc.get_input_output()
 coordinates = ccc.get_coordinates(input_df)
-api_provider = get_recipe_config().get('api_provider')
 date_column_name = ccc.get_date_column_name(input_df)
-consumption_column_name = ccc.get_consumption_column_name(input_df)
 extracted_geopoint, extracted_longitude, extracted_latitude = ccc.get_geopoint_column_names(columns_names)
 user_selected_columns = get_recipe_config().get('user_selected_columns')
 
 API_ENDPOINT = 'https://api.electricitymap.org/v3/power-breakdown/past-range'
-API_TOKEN = get_recipe_config().get("api_configuration_preset").get("APITOKEN")
+API_TOKEN = ccc.get_api_token()
 
 # Date is not in the future:
 input_df[date_column_name] = pd.to_datetime(input_df[date_column_name], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)

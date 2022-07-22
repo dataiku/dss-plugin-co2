@@ -19,9 +19,12 @@ extracted_geopoint, extracted_longitude, extracted_latitude = ccc.get_geopoint_c
 if api_provider == 'RTE':
     API_ENDPOINT = 'https://opendata.reseaux-energies.fr/api/records/1.0/download/'
 
-if api_provider == 'ElectricityMap':
+elif api_provider == 'ElectricityMap':
     API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/past-range'
     API_TOKEN = ccc.get_api_token()
+else:
+    ValueError("No API provider was selected")
+
 
 # Date is not in the future:
 input_df[date_column_name] = pd.to_datetime(input_df[date_column_name], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
