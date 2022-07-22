@@ -1,41 +1,25 @@
-import dataiku
 import pandas as pd
 import requests
 from pandas.io.json import json_normalize
 import datetime
 from dateutil import parser
-from co2_converter_common import date_chunk
-from dataiku.customrecipe import get_input_names_for_role, get_output_names_for_role, get_recipe_config
-from co2_converter_common import parse_wkt_point, get_geopoint_column_names, merge_w_nearest_keys
+import co2_converter_common as ccc
+from dataiku.customrecipe import get_recipe_config
 
-# Inputs
-input_names = get_input_names_for_role('input_ds')
-input_datasets = [dataiku.Dataset(name) for name in input_names]
-input_dataset = input_datasets[0]
+# Get input parameters:
+input_df, output_dataset, columns_names = ccc.get_input_output()
+coordinates = ccc.get_coordinates(input_df)
+api_provider = get_recipe_config().get('api_provider')
+date_column_name = ccc.get_date_column_name(input_df)
+consumption_column_name = ccc.get_consumption_column_name(input_df)
+extracted_geopoint, extracted_longitude, extracted_latitude = ccc.get_geopoint_column_names(columns_names)
+user_selected_columns = get_recipe_config().get('user_selected_columns')
 
-# Outputs
-output_names = get_output_names_for_role('output_ds')
-output_datasets = [dataiku.Dataset(name) for name in output_names]
-output_dataset = output_datasets[0]
-
-# Load input DSS dataset as a Pandas dataframe
-input_df = input_dataset.get_dataframe()
-
-# Load input Parameters:
-date_column_name = get_recipe_config().get('date_column_name')
-coordinates = get_recipe_config().get('coordinates')
 API_ENDPOINT = 'https://api.electricitymap.org/v3/power-breakdown/past-range'
 API_TOKEN = get_recipe_config().get("api_configuration_preset").get("APITOKEN")
 
-user_selected_columns = get_recipe_config().get('user_selected_columns')
-
-# # Check if columns are in input dataset
-columns_names = input_df.columns
-
-extracted_geopoint, extracted_longitude, extracted_latitude = get_geopoint_column_names(columns_names)
-
 # Parse Geopoint to longitude and latitude:
-input_df[extracted_geopoint] = input_df[coordinates].apply(lambda point: parse_wkt_point(point))
+input_df[extracted_geopoint] = input_df[coordinates].apply(lambda point: ccc.parse_wkt_point(point))
 input_df[extracted_longitude] = input_df[extracted_geopoint].apply(lambda point: point[0])
 input_df[extracted_latitude] = input_df[extracted_geopoint].apply(lambda point: point[1])
 
@@ -76,7 +60,7 @@ for index_latitude_longitude, dates in enumerate(dates_per_unique_latitude_longi
     max_date_day = max_date.strftime("%Y-%m-%d")
 
     # As the API is limited to 10 days, I create chunks of dates:
-    chunked_dates = date_chunk(min_date_day, max_date_day, 10)
+    chunked_dates = ccc.date_chunk(min_date_day, max_date_day, 10)
 
     for index_chunked_dates in range(len(chunked_dates)):
         params = {
@@ -113,7 +97,7 @@ for index_latitude_longitude, dates in enumerate(dates_per_unique_latitude_longi
     # convert DateColName to datetime format:
     input_df[date_column_name] = pd.to_datetime(input_df[date_column_name])
 
-    output_df = merge_w_nearest_keys(input_df, data_to_return, date_column_name, 'e-mix_date_time', by=[extracted_latitude, extracted_longitude])
+    output_df = ccc.merge_w_nearest_keys(input_df, data_to_return, date_column_name, 'e-mix_date_time', by=[extracted_latitude, extracted_longitude])
 
     # drop extracted columns (not needed):
     output_df.drop([extracted_geopoint, extracted_latitude, extracted_longitude], axis=1, inplace=True)
