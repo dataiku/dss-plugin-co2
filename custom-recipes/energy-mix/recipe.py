@@ -18,26 +18,16 @@ user_selected_columns = get_recipe_config().get('user_selected_columns')
 API_ENDPOINT = 'https://api.electricitymap.org/v3/power-breakdown/past-range'
 API_TOKEN = get_recipe_config().get("api_configuration_preset").get("APITOKEN")
 
+# Date is not in the future:
+input_df[date_column_name] = pd.to_datetime(input_df[date_column_name], format="%Y-%m-%dT%H:%M:%S.%fZ", utc=True)
+now = datetime.datetime.utcnow()
+if max(input_df[date_column_name]).timestamp() > now.timestamp():
+    raise Exception("Date is in the future. Please check your input dataset or use the CO2 forecast component.")
+
 # Parse Geopoint to longitude and latitude:
 input_df[extracted_geopoint] = input_df[coordinates].apply(lambda point: ccc.parse_wkt_point(point))
 input_df[extracted_longitude] = input_df[extracted_geopoint].apply(lambda point: point[0])
 input_df[extracted_latitude] = input_df[extracted_geopoint].apply(lambda point: point[1])
-
-# Input validation:
-
-# ## Date Column:
-if date_column_name not in columns_names:
-    raise Exception("Not able to find the '%s' column" % date_column_name)
-
-# ## coordinates column:
-if coordinates not in columns_names:
-    raise Exception("Not able to find the '%s' column" % coordinates)
-
-# # Check input data validity:
-
-# API token validity:
-if API_TOKEN is None:
-    raise Exception("No electricityMap API token found.")
 
 # setup request
 session = requests.session()
