@@ -1,0 +1,56 @@
+{
+    "meta": {
+        "label": "CO2 forecast",
+        "description": "Get CO2 forecast from electricityMap",
+        "icon": "icon-double-angle-right"
+    },
+
+    "kind": "PYTHON",
+    "selectableFromDataset": "input_ds",
+
+    "inputRoles": [
+        {
+            "name": "input_ds",
+            "label": "input dataset",
+            "description": "input dataset with coordinates",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true
+        }
+    ],
+
+    "outputRoles": [
+        {
+            "name": "output_ds",
+            "label": "output dataset",
+            "description": "output dataset with forecasted carbon intensity",
+            "arity": "UNARY",
+            "required": false,
+            "acceptsDataset": true
+        }
+
+    ],
+
+    "params": [
+
+        {
+            "name": "api_configuration_preset",
+            "label": "API configuration preset",
+            "type": "PRESET",
+            "parameterSetId": "credentials",
+            "mandatory": false
+        },
+        
+        {
+            "name": "coordinates",
+            "type": "COLUMN",
+            "allowedColumnTypes": ["geopoint","string"],
+            "label" : "Coordinates geopoint",
+            "columnRole":"input_ds"
+        }
+
+    ],
+
+    "resourceKeys": []
+
+}

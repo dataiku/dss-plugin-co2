@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "Energy mix",
-        "description": "Use electricitymap API to get energy mix.",
+        "description": "Use electricitymap API to get energy mix",
         "icon": "icon-bolt"
     },
 
@@ -38,7 +38,7 @@
             "mandatory": true
         },
         {
-            "name": "DateColName",
+            "name": "date_column_name",
             "label": "Date column",
             "type": "COLUMN",
             "description": "",
@@ -47,21 +47,16 @@
         },
         
         {
-            "name": "LatColName",
+            "name": "coordinates",
             "type": "COLUMN",
-            "label" : "Latitude column",
-            "columnRole":"input_ds"
-        },
-               {
-            "name": "LonColName",
-            "type": "COLUMN",
-            "label" : "Longitude column",
+            "allowedColumnTypes": ["geopoint","string"],
+            "label" : "Coordinates geopoint",
             "columnRole":"input_ds"
         },
 
         {
             "type": "MULTISELECT",
-            "name": "ColsToRetrieve",
+            "name": "user_selected_columns",
             "label": "Select the columns to retrieve:",
             "selectChoices": [
               {"value":"powerConsumptionBreakdown","label":"Power Consumption Breakdown"},
