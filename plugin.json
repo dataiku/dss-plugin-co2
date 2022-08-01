@@ -7,8 +7,10 @@
         "description": "Convert your electricity consumption to carbon emission ",
         "author": "Dataiku (Romain Menini)",
         "icon": "icon-dashboard",
-        "tags": [],
-        "url": "",
-        "licenseInfo": "Apache Software License"
+        "tags": ["API","Connector","Open Data"],
+        "url": "https://www.dataiku.com/product/plugins/co2-converter/",
+        "licenseInfo": "Apache Software License",
+        "supportLevel": "NOT_SUPPORTED"
+        
     }
 }
