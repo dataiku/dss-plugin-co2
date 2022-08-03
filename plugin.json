@@ -4,7 +4,7 @@
     
     "meta": {
         "label": "Co2 converter",
-        "description": "Convert your electricity consumption to carbon emission ",
+        "description": "Convert electricity consumption into co2 emission and other features from Electricity Maps API.",
         "author": "Dataiku (Romain Menini)",
         "icon": "icon-dashboard",
         "tags": ["API","Connector","Open Data","Sustainability"],
