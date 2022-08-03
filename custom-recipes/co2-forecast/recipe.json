@@ -1,7 +1,7 @@
 {
     "meta": {
         "label": "CO2 forecast",
-        "description": "Get CO2 forecast from electricityMap",
+        "description": "Get CO2 forecast from electricity Maps",
         "icon": "icon-double-angle-right"
     },
 
