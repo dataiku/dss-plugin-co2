@@ -42,7 +42,7 @@ for index, unique_latitude_longitude in unique_latitudes_longitudes.iterrows():
     data = data.append(data_buffer, ignore_index=True)
 
 # Drop and rename data columns before joining:
-column_names_to_keep = ['datetime', 'carbonIntensity', 'latitude', 'longitude', coordinates]
+column_names_to_keep = ['datetime', 'carbonIntensity', coordinates]
 data = data[column_names_to_keep]
 data = data.dropna()
 
