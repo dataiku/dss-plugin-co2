@@ -9,7 +9,6 @@ import co2_converter_common as ccc
 
 # Get input parameters:
 input_df, output_dataset, columns_names = ccc.get_input_output()
-coordinates = ccc.get_coordinates(input_df)
 api_provider = get_recipe_config().get('api_provider', 'RTE')
 date_column_name = ccc.get_date_column_name(input_df)
 consumption_column_name = ccc.get_consumption_column_name(input_df)
@@ -20,6 +19,7 @@ if api_provider == 'RTE':
     API_ENDPOINT = 'https://opendata.reseaux-energies.fr/api/records/1.0/download/'
 
 elif api_provider == 'ElectricityMap':
+    coordinates = ccc.get_coordinates(input_df)
     API_ENDPOINT = 'https://api.electricitymap.org/v3/carbon-intensity/past-range'
     API_TOKEN = ccc.get_api_token()
 else:
