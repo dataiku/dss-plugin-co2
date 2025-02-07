@@ -1,8 +1,12 @@
 {
     "acceptedPythonInterpreters": [
-        "PYTHON36"
+        "PYTHON36",
+        "PYTHON39",
+        "PYTHON310",
+        "PYTHON311",
+        "PYTHON312"
     ],
-    "corePackagesSet": "PANDAS10",
+    "corePackagesSet": "AUTO",
     "forceConda": false,
     "installCorePackages": true,
     "installJupyterSupport": false
