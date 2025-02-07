@@ -17,3 +17,7 @@ Bug fix for RTE provider
 ## [Version 1.0.2](https://github.com/dataiku/dss-plugin-co2/releases/tag/v1.0.2) - Bug fix - 2023-03
 
 Allow users to set credentials right in the recipes for dataiku cloud
+
+## [Version 1.0.3](https://github.com/dataiku/dss-plugin-co2/releases/tag/v1.0.3) - Bug fix - 2025-02
+
+Add support for more python 3.9, 3.10, 3.11, 3.12
