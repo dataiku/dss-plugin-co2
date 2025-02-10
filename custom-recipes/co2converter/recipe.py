@@ -1,11 +1,15 @@
 import pandas as pd
 import requests
 from io import StringIO
-from pandas.io.json import json_normalize
 import datetime
 from dateutil import parser
 from dataiku.customrecipe import get_recipe_config
 import co2_converter_common as ccc
+
+try:
+    from pandas import json_normalize
+except:
+    from pandas.io.json import json_normalize
 
 # Get input parameters:
 input_df, output_dataset, columns_names = ccc.get_input_output()

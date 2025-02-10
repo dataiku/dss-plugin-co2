@@ -1,7 +1,11 @@
 import pandas as pd
 import requests
-from pandas.io.json import json_normalize
 import co2_converter_common as ccc
+
+try:
+    from pandas import json_normalize
+except:
+    from pandas.io.json import json_normalize
 
 # Get input parameters:
 input_df, output_dataset, columns_names = ccc.get_input_output()
