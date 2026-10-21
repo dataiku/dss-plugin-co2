@@ -7,10 +7,7 @@
     "author": "Dataiku (Romain Menini)",
     "icon": "icon-dashboard",
     "tags": [
-      "API",
-      "Connector",
-      "Open Data",
-      "Sustainability"
+      "Open Data"
     ],
     "url": "https://www.dataiku.com/product/plugins/co2-converter/",
     "licenseInfo": "Apache Software License",

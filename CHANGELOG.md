@@ -1,9 +1,10 @@
 # Changelog
 
-## Version 1.1.0 - Enhancement release - 2026-10-12
+## Version 1.1.0 - Enhancement release - 2026-10-21
 
 - Added supported Python versions: 3.13, 3.14
 - Makefile cleanup: release_info.json lines removed
+- Updated tags
 
 ## [Version 1.0.3](https://github.com/dataiku/dss-plugin-co2/releases/tag/v1.0.3) - Bug fix - 2025-02
 
