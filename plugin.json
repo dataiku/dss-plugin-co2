@@ -1,16 +1,16 @@
 {
-    "id": "co2-converter",
-    "version": "1.0.3",
-    
-    "meta": {
-        "label": "Co2 converter",
-        "description": "Convert electricity consumption into co2 emission and other features from Electricity Maps API.",
-        "author": "Dataiku (Romain Menini)",
-        "icon": "icon-dashboard",
-        "tags": ["API","Connector","Open Data","Sustainability"],
-        "url": "https://www.dataiku.com/product/plugins/co2-converter/",
-        "licenseInfo": "Apache Software License",
-        "supportLevel": "NOT_SUPPORTED"
-        
-    }
+  "id": "co2-converter",
+  "version": "1.1.0",
+  "meta": {
+    "label": "Co2 converter",
+    "description": "Convert electricity consumption into co2 emission and other features from Electricity Maps API.",
+    "author": "Dataiku (Romain Menini)",
+    "icon": "icon-dashboard",
+    "tags": [
+      "Open Data"
+    ],
+    "url": "https://www.dataiku.com/product/plugins/co2-converter/",
+    "licenseInfo": "Apache Software License",
+    "supportLevel": "NOT_SUPPORTED"
+  }
 }
